@@ -1,0 +1,26 @@
+services:
+  database:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: qualityhub
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: qualityhub
+    volumes:
+      - qualityhub-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qualityhub -d qualityhub"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:3100:3100"
+    environment:
+      DATABASE_URL: "postgresql://qualityhub:${POSTGRES_PASSWORD}@database:5432/qualityhub"
+      SEED_DEMO: "true"
+    depends_on:
+      database:
+        condition: service_healthy
+volumes:
+  qualityhub-postgres:
