@@ -93,16 +93,9 @@ The app is exposed only on the local computer at port 3100. PostgreSQL stays on 
 
 ## Architecture
 
-```mermaid
-flowchart TD
-    UI[React and TypeScript interface] --> API[Express API and Zod validation]
-    Reporter[Playwright reporter] --> Ingest[Authenticated import endpoint]
-    Ingest --> Domain[Domain operations and transaction boundary]
-    API --> Auth[Sessions and project permissions]
-    Auth --> Domain
-    Domain --> DB[(PostgreSQL or SQLite)]
-    DB --> Evidence[Case versions, run snapshots and defect lineage]
-```
+![QualityHub architecture](docs/architecture.png)
+
+[Editable diagram source](docs/architecture.mmd)
 
 ### Data model
 
