@@ -1,5 +1,9 @@
 # QualityHub
 
+[![Live demo](https://img.shields.io/badge/Live_demo-Try_QualityHub-111111?style=for-the-badge)](https://qualityhub-public-demo.onrender.com/)
+
+**[Open the live demo](https://qualityhub-public-demo.onrender.com/)** · Select **Try the demo**; no account, invitation or setup key needed. The free server may take about a minute to wake. Visitors share synthetic data that resets on server restart.
+
 **Versioned test management, reproducible execution history and traceable defects.**
 
 QualityHub is a full-stack quality-engineering application built with **React, TypeScript, Node.js, Express and PostgreSQL**, with SQLite available for a zero-configuration local installation. It connects manual test design and automated Playwright execution through a shared project model, role-based access and immutable execution snapshots.

@@ -10,7 +10,7 @@ test('visitor can enter seeded workspace and create a test case',async({page})=>
  await page.getByLabel('Expected result',{exact:true}).fill('Storefront is displayed');
  await page.getByRole('button',{name:'Create test case',exact:true}).click();
  await page.getByRole('button',{name:'Test library',exact:true}).click();
- await expect(page.getByRole('button',{name:new RegExp(title)})).toBeVisible();
+ await expect(page.getByRole('button',{name:`Edit ${title}`,exact:true})).toBeVisible();
  await page.reload();
  await expect(page.getByRole('combobox',{name:'Current project'})).toContainText('Commerce web');
 });
