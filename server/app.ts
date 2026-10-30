@@ -12,7 +12,7 @@ export function createApp(store: Store) {
     app.use((req, _res, next) => {
         // Local application: reject browser requests from other origins to prevent cross-site writes.
         const origin = req.get('origin');
-        if (origin && !['http://127.0.0.1:5173', 'http://localhost:5173', 'http://127.0.0.1:3100', 'http://localhost:3100',...(process.env.APP_ORIGIN?[process.env.APP_ORIGIN]:[])].includes(origin))
+        if (origin && !['http://127.0.0.1:5173', 'http://localhost:5173', 'http://127.0.0.1:3100', 'http://localhost:3100',process.env.APP_ORIGIN,process.env.RENDER_EXTERNAL_URL].filter(Boolean).includes(origin))
             return next(new DomainError(403, 'Origin not allowed'));
         next();
     });

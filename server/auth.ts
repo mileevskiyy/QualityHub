@@ -3,18 +3,19 @@ import { promisify } from 'node:util';
 import { z } from 'zod';
 import { Store, DomainError } from './store.ts';
 const scrypt=promisify(scryptCallback);
-export const registration=z.object({name:z.string().trim().min(2).max(80),email:z.string().trim().email().max(254).transform(s=>s.toLowerCase()),password:z.string().min(12).max(200),invite:z.string().max(200).optional()});
+export const registration=z.object({name:z.string().trim().min(2).max(80),email:z.string().trim().email().max(254).transform(s=>s.toLowerCase()),password:z.string().min(12).max(200),invite:z.string().max(200).optional(),setupKey:z.string().max(200).optional()});
 export type Role='owner'|'tester'|'viewer';
 export interface Identity {id:string;name:string;email:string;csrf:string;sessionHash:string}
 const digest=(value:string)=>createHash('sha256').update(value).digest('hex');
 const token=()=>randomBytes(32).toString('hex');
 export class Auth {
  constructor(private store:Store){}
- async status(){return {needsSetup:!(await this.store.one('SELECT id FROM users LIMIT 1'))};}
+ async status(){const needsSetup=!(await this.store.one('SELECT id FROM users LIMIT 1'));return {needsSetup,setupKeyRequired:needsSetup&&Boolean(process.env.SETUP_KEY)};}
  async register(raw:unknown){
   const b=registration.parse(raw),salt=randomBytes(16).toString('hex'),hash=(await scrypt(b.password,salt,64) as Buffer).toString('hex');
   return this.store.transaction(async()=>{
    const first=!(await this.store.one('SELECT id FROM users LIMIT 1'));
+   if(first&&process.env.SETUP_KEY&&!timingSafeEqual(Buffer.from(digest(b.setupKey||''),'hex'),Buffer.from(digest(process.env.SETUP_KEY),'hex')))throw new DomainError(403,'A valid setup key is required to create the workspace owner.');
    const invite=b.invite?await this.store.one('SELECT * FROM invitations WHERE token_hash=? AND used_at IS NULL AND expires_at>?',digest(b.invite),new Date().toISOString()):undefined;
    if(!first&&(!invite||invite.email!==b.email))throw new DomainError(403,'A valid invitation for this email address is required.');
    if(await this.store.one('SELECT id FROM users WHERE email=?',b.email))throw new DomainError(409,'An account with this email already exists.');

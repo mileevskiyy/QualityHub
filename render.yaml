@@ -1,0 +1,35 @@
+# Temporary free demo. Render Free PostgreSQL expires after 30 days.
+# Review all plans in Render before creating resources.
+services:
+  - type: web
+    name: qualityhub-demo
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: "10000"
+      - key: SEED_DEMO
+        value: "true"
+      - key: SETUP_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: qualityhub-demo-db
+          property: connectionString
+databases:
+  - name: qualityhub-demo-db
+    databaseName: qualityhub
+    user: qualityhub
+    plan: free
+    region: singapore
+    postgresMajorVersion: "17"
+    ipAllowList: []

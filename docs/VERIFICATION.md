@@ -4,9 +4,9 @@ Release 0.2, checked on 30 October 2026 with Node.js 24.17.0.
 
 ## Executed automated checks
 
-- `npm test`: **22 passed, 1 skipped, 0 failed**.
+- `npm test`: **23 passed, 1 skipped, 0 failed**.
 - `npm run build`: strict TypeScript checks and Vite production build passed.
-- `npm run test:e2e`: the full Chromium workflow passed locally (1 test). Registration also verifies that the password hint is an accessible description rather than part of the field name.
+- `npm run test:e2e`: the full Chromium workflow passed locally (1 test). The setup-key protection is covered by a dedicated first-owner registration test. Registration also verifies that the password hint is an accessible description rather than part of the field name.
 - Dependency installation audit: **0 reported known vulnerabilities** at the time of verification.
 
 The executed checks cover SQLite and an embedded PostgreSQL engine through PGlite. They verify historical snapshots, case-version retention, stale-write rejection, run completion rules, immutable completed results, defect lineage, project boundaries, archival retention, transaction rollback, persistence and repeatable demo initialization.
@@ -27,6 +27,10 @@ Against an isolated local database with fictional accounts and records:
 6. Captured the updated interface screenshot included in this directory.
 
 The previous release's complete browser case/run/defect workflow is additionally represented by the maintained Playwright end-to-end test.
+
+## Deployment configuration
+
+The Render Blueprint passes validation against Render’s published JSON Schema. This checks configuration structure; account-specific availability, resource creation and live HTTPS behavior are verified during deployment.
 
 ## Explicit verification limits
 

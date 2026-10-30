@@ -196,9 +196,15 @@ npm run test:e2e
 
 The GitHub Actions workflow provisions PostgreSQL, runs the server checks, builds the interface and runs a Chromium workflow. The browser suite starts an isolated database and requires port 3100 to be free. See [verification record](docs/VERIFICATION.md) for checks actually executed on the current release.
 
+## Render deployment
+
+The included `render.yaml` defines a Docker web service and PostgreSQL database, with deploys gated on passing GitHub checks. It uses free plans for a temporary demo; Render Free PostgreSQL expires after 30 days. Review the current terms before creating resources. See [Render setup](docs/DEPLOY_RENDER_RU.md).
+
+In production, the first owner registration requires the generated `SETUP_KEY`. The application accepts Render’s own `RENDER_EXTERNAL_URL` as a trusted origin.
+
 ## Deployment and operational boundaries
 
-The application binds to loopback by default. For a remote Node deployment, configure `HOST`, `DATABASE_URL`, `APP_ORIGIN` and `NODE_ENV=production`, and place the service behind HTTPS. Production mode enables Secure cookies. Bootstrap the first account privately before making the service accessible to other people.
+The application binds to loopback by default. For a remote Node deployment, configure `HOST`, `DATABASE_URL`, `APP_ORIGIN`, `SETUP_KEY` (at least 32 characters) and `NODE_ENV=production`, and place the service behind HTTPS. Production mode enables Secure cookies. Bootstrap the first account privately before making the service accessible to other people.
 
 This release does not include password recovery, email verification, organization-wide SSO, file attachments or operational monitoring. Authentication throttling is process-local. Lists are not paginated, the activity endpoint returns the latest 60 entries and PostgreSQL writes are conservatively serialized. No production scale or availability claim is implied.
 

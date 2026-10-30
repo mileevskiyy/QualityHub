@@ -3,6 +3,8 @@ import { mkdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Store } from './store.ts';
 import { createApp } from './app.ts';
+if(process.env.NODE_ENV==='production'&&(process.env.SETUP_KEY||'').length<32)throw new Error('Production requires SETUP_KEY with at least 32 characters. Configure it in the hosting environment.');
+if(process.env.NODE_ENV==='production'&&!process.env.DATABASE_URL)throw new Error('Production requires DATABASE_URL for persistent PostgreSQL storage.');
 const dataPath = resolve(process.env.DATA_DIR || 'data');
 mkdirSync(dataPath, { recursive: true });
 const store = new Store(process.env.DATABASE_URL || resolve(dataPath, 'qualityhub.sqlite'));
