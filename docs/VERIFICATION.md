@@ -6,6 +6,7 @@ Release 0.2, checked on 30 October 2026 with Node.js 24.17.0.
 
 - `npm test`: **22 passed, 1 skipped, 0 failed**.
 - `npm run build`: strict TypeScript checks and Vite production build passed.
+- `npm run test:e2e`: the full Chromium workflow passed locally (1 test). Registration also verifies that the password hint is an accessible description rather than part of the field name.
 - Dependency installation audit: **0 reported known vulnerabilities** at the time of verification.
 
 The executed checks cover SQLite and an embedded PostgreSQL engine through PGlite. They verify historical snapshots, case-version retention, stale-write rejection, run completion rules, immutable completed results, defect lineage, project boundaries, archival retention, transaction rollback, persistence and repeatable demo initialization.
@@ -31,4 +32,4 @@ The previous release's complete browser case/run/defect workflow is additionally
 
 The standalone PostgreSQL wire-driver test was skipped locally because `TEST_POSTGRES_URL` was not configured. PGlite coverage does not verify a remote PostgreSQL connection, TLS configuration or a hosted database. GitHub Actions is configured to run that driver test with a PostgreSQL service after the repository is uploaded; no remote CI result is claimed here.
 
-The CLI Chromium suite and Docker Compose stack were not executed in this environment. The browser interactions listed above were performed against the running application. No public deployment, load benchmark, external user adoption or completed security audit is claimed.
+The Docker Compose stack was not executed in this environment. The browser interactions listed above were performed against the running application. No public deployment, load benchmark, external user adoption or completed security audit is claimed.

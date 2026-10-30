@@ -4,7 +4,10 @@ test('create a case, execute it and create a linked defect',async({page})=>{
  const email=`browser-${Date.now()}@example.test`;
  await page.getByLabel('Your name',{exact:true}).fill('Browser tester');
  await page.getByLabel('Email',{exact:true}).fill(email);
- await page.getByLabel('Password',{exact:true}).fill('Synthetic-password-123!');
+ const password=page.getByLabel('Password',{exact:true});
+ await expect(password).toHaveAccessibleName('Password');
+ await expect(password).toHaveAccessibleDescription('At least 12 characters.');
+ await password.fill('Synthetic-password-123!');
  await page.getByRole('button',{name:'Create account',exact:true}).click();
  await page.getByRole('button',{name:'Create project',exact:true}).first().click();
  const projectName=`Browser project ${Date.now()}`;
