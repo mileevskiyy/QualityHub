@@ -39,6 +39,14 @@ PGlite runs a PostgreSQL engine inside the test process. It provides SQL and tra
 
 ## Quick start
 
+### Disposable public demo mode
+
+Set `PUBLIC_DEMO=true` to run an isolated, in-memory SQLite workspace with a **Try the demo** entry button. The server creates a synthetic operator and grants access to the seeded example project. Visitors share this disposable workspace; changes and sessions are discarded when the process restarts. Do not enter personal data.
+
+This mode refuses `DATABASE_URL`, never connects to the persistent PostgreSQL workspace, and does not require a setup key or visitor password. Existing authentication and CSRF checks still protect interactive changes. With `PUBLIC_DEMO` unset, normal account registration, invitations and persistent storage behave as before.
+
+Run the demo locally with `PUBLIC_DEMO=true npm start` after building. Verify visitor entry with `npx playwright test --config playwright.demo.config.ts`.
+
 Requires **Node.js 24 LTS** and npm. Run commands from the repository root.
 
 ```sh

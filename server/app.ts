@@ -4,7 +4,8 @@ import { Store, DomainError, caseInput } from './store.ts';
 import { Auth, type Identity } from './auth.ts';
 import { importRun } from './imports.ts';
 const text = (min: number, max: number) => z.string().trim().min(min).max(max);
-export function createApp(store: Store) {
+export function createApp(store: Store, options:{demoUserId?:string}={}) {
+    if(options.demoUserId&&store.db.dialect!=='sqlite')throw new Error('Public demo cannot use PostgreSQL.');
     const app = express();
     const auth=new Auth(store);
     app.disable('x-powered-by');
@@ -26,8 +27,10 @@ export function createApp(store: Store) {
       const entry=attempts.get(key)||{count:0,until:time+15*60000};entry.count++;attempts.set(key,entry);
       if(entry.count>30)return next(new DomainError(429,'Too many authentication attempts. Try again later.'));next();
     });
-    app.get('/api/auth/status',async(_req,res)=>res.json(await auth.status()));
+    app.get('/api/auth/status',async(_req,res)=>res.json({...await auth.status(),publicDemo:Boolean(options.demoUserId)}));
     const sessionCookie=(res:express.Response,value:string)=>res.cookie('qh_session',value,{httpOnly:true,sameSite:'strict',secure:process.env.NODE_ENV==='production',path:'/',maxAge:7*86400000});
+    app.post('/api/auth/demo',async(_req,res,next)=>{if(!options.demoUserId)return next(new DomainError(404,'Demo mode is disabled.'));const session=await auth.session(options.demoUserId);sessionCookie(res,session.token);res.json({ok:true});});
+    app.use('/api/auth',(req,_res,next)=>{if(options.demoUserId&&['/register','/login'].includes(req.path))return next(new DomainError(403,'Use the demo entry button.'));next();});
     app.post('/api/auth/register',async(req,res)=>{const user=await auth.register(req.body),session=await auth.session(user.id);sessionCookie(res,session.token);res.status(201).json({ok:true});});
     app.post('/api/auth/login',async(req,res)=>{const b=z.object({email:z.string().email().max(254),password:z.string().min(1).max(200)}).parse(req.body);const session=await auth.login(b.email,b.password);sessionCookie(res,session.token);res.json({ok:true});});
     app.use('/api',async(req,res,next)=>{
