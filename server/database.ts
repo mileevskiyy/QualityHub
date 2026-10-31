@@ -1,7 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { Pool, type PoolClient } from 'pg';
-import { schema, collaborationSchema } from './schema.ts';
+import { schema, collaborationSchema, attachmentSchema } from './schema.ts';
 
 export class Database {
   private sqlite?: DatabaseSync;
@@ -27,6 +27,10 @@ export class Database {
       this.sqlite.exec('PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;');
       this.sqlite.exec(schema+collaborationSchema);
     }
+    if(this.sqlite)this.sqlite.exec(attachmentSchema);
+    else if(this.pglite)await this.pglite.exec(attachmentSchema);
+    else await this.pg!.query(attachmentSchema);
+    await this.exec('INSERT INTO schema_migrations(version,applied_at) VALUES(3,?) ON CONFLICT(version) DO NOTHING',[new Date().toISOString()]);
     if(!(await this.all('SELECT version FROM schema_migrations WHERE version=2')).length){
       await this.exec('ALTER TABLE results ADD COLUMN position INTEGER NOT NULL DEFAULT 0');
       await this.exec('INSERT INTO schema_migrations VALUES(2,?)',[new Date().toISOString()]);

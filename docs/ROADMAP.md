@@ -17,9 +17,13 @@
 
 Completed-run comparison with stable test identity, retained definitions/observations, separate definition-change classification, final-attempt duration deltas, read-permission checks, mobile layout and JSON export.
 
+## Implemented: execution attachments
+
+Bounded database-backed screenshot/log/trace evidence, project-authorized downloads and screenshot previews, immutable content hashes, 30-day retention, upload replay, automation retry attribution and reporter/manual import delivery. Evidence is accessible from the execution and linked defect. Large object-storage-backed artifacts remain future work.
+
 ## Next development milestones
 
-1. Result attachments, trace storage and controlled artifact downloads.
+1. Object-storage adapter and streaming delivery for evidence beyond the current bounded database storage.
 2. Saved filters, pagination and indexed query measurements on generated datasets.
 3. Flaky-test indicators with documented definitions and a minimum observation window.
 4. Email delivery, verified invitations and password recovery.

@@ -1,3 +1,4 @@
+import {addAttachment,listAttachments,readAttachment} from './attachments.ts';
 import express from 'express';
 import { z, ZodError } from 'zod';
 import { Store, DomainError, caseInput } from './store.ts';
@@ -38,7 +39,7 @@ export function createApp(store: Store, options:{demoUserId?:string}={}) {
       const user=await auth.identify(match?.[1]);
       if(user)res.locals.user=user;
       // Import bearer tokens are checked by the dedicated endpoint, not accepted as interactive sessions.
-      if(!user&&!(req.method==='POST'&&/^\/projects\/[^/]+\/imports\/playwright$/.test(req.path)&&req.get('authorization')?.startsWith('Bearer ')))throw new DomainError(401,'Sign in to continue.');
+      if(!user&&!(req.method==='POST'&&/^\/projects\/[^/]+\/imports\/playwright(?:\/attachments)?$/.test(req.path)&&req.get('authorization')?.startsWith('Bearer ')))throw new DomainError(401,'Sign in to continue.');
       if(user&&!['GET','HEAD'].includes(req.method)&&req.get('x-csrf-token')!==user.csrf)throw new DomainError(403,'Session verification failed. Reload and try again.');
       next();
     });
@@ -46,7 +47,7 @@ export function createApp(store: Store, options:{demoUserId?:string}={}) {
     app.post('/api/auth/logout',async(_req,res)=>{await auth.logout(res.locals.user);res.clearCookie('qh_session',{path:'/'});res.json({ok:true});});
     app.use('/api/projects/:p',async(req,res,next)=>{
       const bearer=req.get('authorization');
-      if(req.method==='POST'&&req.path==='/imports/playwright'&&bearer?.startsWith('Bearer ')){
+      if(req.method==='POST'&&['/imports/playwright','/imports/playwright/attachments'].includes(req.path)&&bearer?.startsWith('Bearer ')){
         if(!await auth.tokenIdentity(bearer.slice(7),req.params.p))throw new DomainError(401,'Invalid or revoked integration token.');
       }else{await auth.role(res.locals.user.id,req.params.p,['GET','HEAD'].includes(req.method)?'read':'write');}
       next();
@@ -60,6 +61,20 @@ export function createApp(store: Store, options:{demoUserId?:string}={}) {
     app.post('/api/projects/:p/tokens',async(req,res)=>{await auth.role(res.locals.user.id,req.params.p,'owner');const b=z.object({name:text(3,80)}).parse(req.body);res.status(201).json(await auth.token(req.params.p,b.name));});
     app.delete('/api/projects/:p/tokens/:t',async(req,res)=>{await auth.role(res.locals.user.id,req.params.p,'owner');await auth.revoke(req.params.p,req.params.t);res.json({ok:true});});
     app.post('/api/projects/:p/imports/playwright',async(req,res)=>res.status(201).json(await importRun(store,req.params.p,req.body)));
+    app.post('/api/projects/:p/imports/playwright/attachments',async(req,res)=>{
+      const b=z.object({runExternalId:z.string().min(3).max(180),testExternalId:z.string().min(1).max(300),retry:z.number().int().min(0).max(20)}).parse(req.body);
+      const result=await store.one('SELECT t.id FROM imports i JOIN results t ON t.run_id=i.run_id JOIN external_cases c ON c.case_id=t.case_id AND c.project_id=i.project_id WHERE i.project_id=? AND i.external_id=? AND c.external_id=?',req.params.p,b.runExternalId,b.testExternalId);
+      if(!result)throw new DomainError(404,'Imported test result not found');
+      res.status(201).json(await addAttachment(store,req.params.p,result.id,req.body));
+    });
+    app.get('/api/projects/:p/results/:id/attachments',async(req,res)=>res.json(await listAttachments(store,req.params.p,req.params.id)));
+    app.post('/api/projects/:p/results/:id/attachments',async(req,res)=>res.status(201).json(await addAttachment(store,req.params.p,req.params.id,req.body)));
+    app.get('/api/projects/:p/attachments/:id',async(req,res)=>{
+      const a=await readAttachment(store,req.params.p,req.params.id);
+      res.set('Content-Type',a.mime);res.set('Content-Security-Policy',"sandbox; default-src 'none'");
+      res.set('Content-Disposition',`attachment; filename="evidence"; filename*=UTF-8''${encodeURIComponent(a.filename)}`);
+      res.send(Buffer.from(a.content_base64,'base64'));
+    });
     app.get('/api/projects/:p/cases', async (req, res) => res.json((await store.cases(req.params.p))));
     app.post('/api/projects/:p/cases', async (req, res) => res.status(201).json((await store.createCase(req.params.p, req.body))));
     app.put('/api/projects/:p/cases/:c', async (req, res) => { const b = caseInput.extend({ version: z.number().int().positive() }).parse(req.body); res.json((await store.updateCase(req.params.p, req.params.c, b.version, b))); });
@@ -82,7 +97,8 @@ export function createApp(store: Store, options:{demoUserId?:string}={}) {
     app.get('/api/projects/:p/export', async (req, res) => {
         const project = (await store.requireProject(req.params.p));
         res.setHeader('Content-Disposition', 'attachment; filename="qualityhub-export.json"');
-        res.json({ schemaVersion: 2, exportedAt: new Date().toISOString(), project, cases: (await store.cases(project.id)), runs: await Promise.all((await store.runs(project.id)).map(r => store.run(project.id, r.id))), defects: (await store.defects(project.id)) });
+        const attachments=await store.all('SELECT a.id,a.result_id,a.filename,a.kind,a.mime,a.byte_size,a.sha256,a.retry,a.created_at,a.expires_at FROM attachments a JOIN results t ON a.result_id=t.id JOIN runs r ON t.run_id=r.id WHERE r.project_id=? AND a.expires_at>?',project.id,new Date().toISOString());
+        res.json({ attachments, schemaVersion: 2, exportedAt: new Date().toISOString(), project, cases: (await store.cases(project.id)), runs: await Promise.all((await store.runs(project.id)).map(r => store.run(project.id, r.id))), defects: (await store.defects(project.id)) });
     });
     app.use('/api', (_req, res) => res.status(404).json({ error: 'Endpoint not found' }));
     app.use((error: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

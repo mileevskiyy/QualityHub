@@ -22,6 +22,7 @@ The central design principle is that a test definition can evolve while the evid
 - **Access administration:** invitations, membership changes and removal, with protection against deleting the last project owner.
 - **Automation integration:** a custom Playwright reporter, project-scoped integration tokens, retry history and idempotent report ingestion.
 - **Persistence:** transactional SQLite or PostgreSQL storage, schema migration tracking, foreign keys and uniqueness constraints.
+- **Execution attachments:** immutable screenshots, UTF-8 logs and trace ZIPs; authorized downloads, screenshot previews, attempt attribution, replay-safe upload and bounded retention.
 - **Run comparison:** completed-run diffs by stable test identity, separate definition changes, new failures/fixes, membership changes, final-attempt duration deltas and JSON evidence export.
 - **Visibility:** project activity, execution summaries and JSON export of active test definitions, run snapshots and defects.
 
@@ -121,6 +122,20 @@ Fresh demo installations include two explicitly illustrative completed sample ru
 
 ![Run comparison](docs/comparison.png)
 
+## Execution evidence
+
+Open a test execution or its linked defect to find **Execution attachments**. Owners and testers can attach a PNG/JPEG/WebP screenshot, UTF-8 log or ZIP trace, including after the run completes. These are additive evidence: the saved definition, outcome and revision are unchanged. Viewers can inspect/download retained files but cannot upload. SHA-256, byte size, upload time, expiry and optional recorded automation retry identify each file.
+
+The Playwright reporter collects supported `result.attachments`, waits for collection before finishing, and writes a local report containing base64 file content before network delivery. It first imports the report, then sends each attachment through a project-scoped integration-token endpoint. A partial delivery can be retried without duplicating either the run or files. The Automation panel can import the saved report JSON and finish missing attachments. Files omitted by reporter size/count limits produce an explicit console warning. Unsupported attachment types are not collected.
+
+Limits: **4 MiB per file**, **20 files / 20 MiB per result**, **500 files / 64 MiB per project**, **2,000 files / 128 MiB per installation**. The reporter collects at most 64 MiB of raw evidence per execution of the reporter; server quotas also apply. Retention is 30 days from upload. Expired files are unavailable to lists/downloads and are physically pruned on the next attachment upload. An installation backup may retain older copies according to its own policy.
+
+Files are stored as base64 TEXT in SQLite/PostgreSQL inside the same transaction as the audit event. This favors atomic, portable evidence for a bounded deployment; it is not object storage or large-artifact streaming. The public in-memory demo loses files on restart. The project JSON export includes retained attachment metadata, not file bytes; full database backups include bytes. Completed-run attachments cannot be overwritten or individually deleted through the API.
+
+Downloads require current project read access, use attachment disposition, no-store, nosniff and a sandbox CSP. Integration tokens can upload to their own imported test attempts but cannot browse/download evidence. Screenshot signatures, ZIP signatures and UTF-8 logs are checked; archives are not extracted, validated as complete Playwright traces, or executed by the server. ZIP evidence must be downloaded and opened in a trusted local Playwright Trace Viewer (`npx playwright show-trace path/to/trace.zip`). Screenshots can be previewed inside the app. Files may contain application data; choose the evidence you retain accordingly.
+
+![Execution evidence](docs/evidence.png)
+
 ## Architecture
 
 ![QualityHub architecture](docs/architecture.png)
@@ -204,7 +219,7 @@ QUALITYHUB_RUN_NAME=Storefront regression
 
 The project ID is shown in the Automation panel. Store the token as a CI secret. Give separate CI executions distinct run IDs; use the same ID and saved payload when retrying delivery of one execution. Include the CI attempt identifier when rerunning the tests themselves.
 
-The reporter writes `test-results/qualityhub-report.json` before attempting upload. If no upload configuration is present, the saved file can be imported through the Automation panel. Remote uploads require HTTPS; localhost HTTP is allowed for development. Reports are limited to 500 tests and the API rejects request bodies over 8 MB. Execution retries are retained; file attachments and browser traces are not uploaded by this version.
+The reporter writes `test-results/qualityhub-report.json` before attempting upload. If no upload configuration is present, the saved file can be imported through the Automation panel. Remote uploads require HTTPS; localhost HTTP is allowed for development. Reports are limited to 500 tests and the API rejects request bodies over 8 MB. Execution retries are retained; supported screenshot, log and trace attachments are uploaded separately and linked to their recorded retry.
 
 ## Verification
 
@@ -229,7 +244,7 @@ In production, the first owner registration requires the generated `SETUP_KEY`. 
 
 The application binds to loopback by default. For a remote Node deployment, configure `HOST`, `DATABASE_URL`, `APP_ORIGIN`, `SETUP_KEY` (at least 32 characters) and `NODE_ENV=production`, and place the service behind HTTPS. Production mode enables Secure cookies. Bootstrap the first account privately before making the service accessible to other people.
 
-This release does not include password recovery, email verification, organization-wide SSO, file attachments or operational monitoring. Authentication throttling is process-local. Lists are not paginated, the activity endpoint returns the latest 60 entries and PostgreSQL writes are conservatively serialized. No production scale or availability claim is implied.
+This release does not include password recovery, email verification, organization-wide SSO or operational monitoring. Authentication throttling is process-local. Lists are not paginated, the activity endpoint returns the latest 60 entries and PostgreSQL writes are conservatively serialized. No production scale or availability claim is implied.
 
 JSON export is a portable report, not a full backup. For complete SQLite backup, stop the application and copy its database directory. Use PostgreSQL backup tooling for that backend and verify restoration before relying on it.
 

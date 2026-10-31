@@ -28,6 +28,9 @@ test('authenticated HTTP workflow, CSRF, project isolation and role enforcement'
   const next=await(await req(`/projects/${p.id}/runs`,'POST',{name:'Candidate API workflow',caseIds:[c.id]})).json();
   await req(`/projects/${p.id}/runs/${next.id}/results/${next.results[0].id}`,'PATCH',{status:'passed',note:'Fixed',revision:1});
   await req(`/projects/${p.id}/runs/${next.id}/complete`,'POST');
+  const evidence={filename:'failure.log',kind:'log',contentBase64:Buffer.from('Checkout failed').toString('base64')};
+  const attachment=await(await req(`/projects/${p.id}/results/${result.id}/attachments`,'POST',evidence)).json();assert.ok(attachment.id);
+  const downloaded=await req(`/projects/${p.id}/attachments/${attachment.id}`);assert.equal(await downloaded.text(),'Checkout failed');assert.ok(downloaded.headers.get('content-disposition')?.startsWith('attachment;'));assert.ok(downloaded.headers.get('content-security-policy')?.includes('sandbox'));
   const comparisonPath=`/projects/${p.id}/runs/compare?baseline=${run.id}&candidate=${next.id}`;
   assert.equal((await(await req(comparisonPath)).json()).summary.fixed,1);
   const data=await(await req(`/projects/${p.id}/export`)).json();assert.equal(data.schemaVersion,2);assert.equal(data.runs.find((r:any)=>r.id===run.id).results[0].status,'failed');
@@ -35,12 +38,17 @@ test('authenticated HTTP workflow, CSRF, project isolation and role enforcement'
   cookie='';csrf='';await register('viewer@example.test',invitation.invite);
   assert.equal((await req(`/projects/${p.id}/cases`)).status,200);
   assert.equal((await req(comparisonPath)).status,200);
+  assert.equal((await req(`/projects/${p.id}/results/${result.id}/attachments`,'POST',evidence)).status,403);
+  assert.equal((await req(`/projects/${p.id}/attachments/${attachment.id}`)).status,200);
   assert.equal((await req(`/projects/${p.id}/cases`,'POST',{})).status,403);
   assert.equal((await req(`/projects/${p.id}/tokens`)).status,403);
   const viewerCookie=cookie,viewerCsrf=csrf;
   cookie=ownerCookie;csrf=ownerCsrf;
+  const token=await(await req(`/projects/${p.id}/tokens`,'POST',{name:'Evidence write token'})).json();
+  assert.equal((await req(`/projects/${p.id}/attachments/${attachment.id}`,'GET',undefined,{Cookie:'',Authorization:`Bearer ${token.token}`})).status,401);
   const other=await(await req('/projects','POST',{name:'Private owner project'})).json();
   cookie=viewerCookie;csrf=viewerCsrf;
+  assert.equal((await req(`/projects/${other.id}/attachments/${attachment.id}`)).status,404);
   assert.equal((await req(`/projects/${other.id}/runs/compare?baseline=${run.id}&candidate=${next.id}`)).status,404);
   assert.equal((await req(`/projects/${other.id}/export`)).status,404);
   assert.equal((await req('/auth/logout','POST')).status,200);assert.equal((await req('/auth/me')).status,401);

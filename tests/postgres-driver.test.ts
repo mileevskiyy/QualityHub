@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {Pool} from 'pg';
+import {addAttachment,readAttachment} from '../server/attachments.ts';
 import {Store} from '../server/store.ts';
 import {Auth} from '../server/auth.ts';
 import {importRun} from '../server/imports.ts';
@@ -25,6 +26,8 @@ test('PostgreSQL wire driver, migrations, transactions and report replay',{skip:
   const comparison=await store.compareRuns(p.id,baseline.id,candidate.run.id);
   assert.equal(comparison.summary.regression,1);
   assert.equal(comparison.rows[0].durationDeltaMs,15);
+  const attachment=await addAttachment(store,p.id,candidate.run.results[0].id,{filename:'driver.log',kind:'log',retry:0,contentBase64:Buffer.from('Driver evidence').toString('base64')});
+  assert.equal(Buffer.from((await readAttachment(store,p.id,attachment.id)).content_base64,'base64').toString(),'Driver evidence');
   assert.equal((await auth.projects(user.id)).length,1);
  }finally{await store.close();await pool.query(`DROP SCHEMA ${schema} CASCADE`);await pool.end();}
 });

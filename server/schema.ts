@@ -11,3 +11,14 @@ CREATE TABLE IF NOT EXISTS external_cases(project_id TEXT NOT NULL REFERENCES pr
 CREATE TABLE IF NOT EXISTS automation_attempts(id TEXT PRIMARY KEY,result_id TEXT NOT NULL REFERENCES results(id),retry INTEGER NOT NULL,status TEXT NOT NULL,duration_ms INTEGER NOT NULL,error TEXT NOT NULL,UNIQUE(result_id,retry));
 CREATE INDEX IF NOT EXISTS sessions_expiry ON sessions(expires_at);
 `;
+
+export const attachmentSchema = `
+CREATE TABLE IF NOT EXISTS attachments(
+ id TEXT PRIMARY KEY,result_id TEXT NOT NULL REFERENCES results(id),filename TEXT NOT NULL,
+ kind TEXT NOT NULL CHECK(kind IN ('screenshot','log','trace')),mime TEXT NOT NULL,byte_size INTEGER NOT NULL,
+ sha256 TEXT NOT NULL,retry INTEGER NOT NULL,created_at TEXT NOT NULL,expires_at TEXT NOT NULL,content_base64 TEXT NOT NULL,
+ UNIQUE(result_id,sha256,filename,kind,retry)
+);
+CREATE INDEX IF NOT EXISTS attachments_result ON attachments(result_id);
+CREATE INDEX IF NOT EXISTS attachments_expiry ON attachments(expires_at);
+`;
