@@ -118,7 +118,8 @@ export class Store {
         const run = (await this.one('SELECT * FROM runs WHERE id=? AND project_id=?', runId, projectId));
         if (!run)
             throw new DomainError(404, 'Test run not found');
-        return { ...run, results: (await this.all('SELECT results.*,defects.id defect_id FROM results LEFT JOIN defects ON results.id=defects.result_id WHERE run_id=? ORDER BY results.position,results.id', runId)).map(r => ({ ...r, snapshot: JSON.parse(r.snapshot) })) };
+        const imported=await this.one('SELECT imports.external_id,import_sources.payload FROM imports LEFT JOIN import_sources ON imports.run_id=import_sources.run_id WHERE imports.run_id=?',runId);
+        return { ...run, automation:imported?{externalId:imported.external_id,source:imported.payload?JSON.parse(imported.payload):null}:null, results: (await this.all('SELECT results.*,defects.id defect_id FROM results LEFT JOIN defects ON results.id=defects.result_id WHERE run_id=? ORDER BY results.position,results.id', runId)).map(r => ({ ...r, snapshot: JSON.parse(r.snapshot) })) };
     }
     async compareRuns(projectId: string, baselineId: string, candidateId: string) {
         if (baselineId === candidateId) throw new DomainError(400, 'Choose two different completed runs.');

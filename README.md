@@ -122,6 +122,14 @@ Fresh demo installations include two explicitly illustrative completed sample ru
 
 ![Run comparison](docs/comparison.png)
 
+## CI source context
+
+Imported reports can include `source: { repository, commit, buildUrl?, dirty?, scenario? }`. The repository is an `owner/name` pair, commit a 40-character lowercase SHA, and an optional build URL must identify a GitHub Actions run. Source context is saved with the import, included in its replay identity, shown on the run and retained in project exports. Manual and older imported runs remain supported. The reporter reads `QUALITYHUB_REPOSITORY`, `QUALITYHUB_COMMIT`, `QUALITYHUB_BUILD_URL`, `QUALITYHUB_DIRTY` and `QUALITYHUB_SCENARIO`; repository/commit can default to GitHub Actions variables.
+
+This is metadata supplied by a project-authorized integration, not cryptographic proof of build provenance. A changed source on the same external run ID is rejected rather than rewriting historical context.
+
+OrderFlow includes a reproducible integration exercise using a private temporary QualityHub instance. It runs a deliberately injected order-API outage, then the normal browser workflow, verifies actual attachments and retry delivery, creates a linked defect and compares the outcomes. CI reports and exports survive as GitHub Actions artifacts; the temporary service and credentials are cleaned up. See [OrderFlow integration guide](https://github.com/mileevskiyy/OrderFlow/blob/main/docs/QUALITYHUB_INTEGRATION.md).
+
 ## Execution evidence
 
 Open a test execution or its linked defect to find **Execution attachments**. Owners and testers can attach a PNG/JPEG/WebP screenshot, UTF-8 log or ZIP trace, including after the run completes. These are additive evidence: the saved definition, outcome and revision are unchanged. Viewers can inspect/download retained files but cannot upload. SHA-256, byte size, upload time, expiry and optional recorded automation retry identify each file.

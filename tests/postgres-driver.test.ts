@@ -17,11 +17,11 @@ test('PostgreSQL wire driver, migrations, transactions and report replay',{skip:
   const c=await store.createCase(p.id,{title:'Transactional checkout',suite:'Commerce',priority:'high',steps:['Submit order'],expected:'Confirmation appears'});
   await store.updateCase(p.id,c.id,1,{...c,title:'Updated checkout'});
   await assert.rejects(()=>store.updateCase(p.id,c.id,1,c),/has changed/);
-  const payload={externalId:'postgres-ci-1',name:'Postgres reporter run',tests:[{externalId:'login',title:'Customer can sign in',suite:'chromium',attempts:[{retry:0,status:'passed',durationMs:10}]}]};
+  const payload={source:{repository:'mileevskiyy/OrderFlow',commit:'b'.repeat(40)},externalId:'postgres-ci-1',name:'Postgres reporter run',tests:[{externalId:'login',title:'Customer can sign in',suite:'chromium',attempts:[{retry:0,status:'passed',durationMs:10}]}]};
   assert.equal((await importRun(store,p.id,payload)).replayed,false);
   assert.equal((await importRun(store,p.id,payload)).replayed,true);
   const baseline=(await store.runs(p.id))[0];
-  assert.equal(baseline.passed,1);
+  assert.equal(baseline.passed,1);assert.equal((await store.run(p.id,baseline.id)).automation.source.commit,'b'.repeat(40));
   const candidate=await importRun(store,p.id,{...payload,externalId:'postgres-ci-2',tests:[{...payload.tests[0],attempts:[{retry:0,status:'failed',durationMs:25,error:'Regression'}]}]});
   const comparison=await store.compareRuns(p.id,baseline.id,candidate.run.id);
   assert.equal(comparison.summary.regression,1);

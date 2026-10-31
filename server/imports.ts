@@ -2,7 +2,8 @@ import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { Store, DomainError } from './store.ts';
 const attempt=z.object({retry:z.number().int().min(0).max(20),status:z.enum(['passed','failed','timedOut','skipped','interrupted']),durationMs:z.number().int().min(0).max(86400000),error:z.string().max(12000).default('')});
-export const importInput=z.object({externalId:z.string().trim().min(3).max(180),name:z.string().trim().min(3).max(140),tests:z.array(z.object({externalId:z.string().trim().min(1).max(300),title:z.string().trim().min(3).max(180),suite:z.string().trim().min(1).max(80),expectedStatus:z.enum(['passed','failed','skipped']).default('passed'),attempts:z.array(attempt).min(1).max(21)})).min(1).max(500)});
+const source=z.object({repository:z.string().regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/),commit:z.string().regex(/^[a-f0-9]{40}$/),buildUrl:z.string().regex(/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+\/actions\/runs\/[0-9]+(?:\/attempts\/[0-9]+)?$/).optional(),dirty:z.boolean().optional(),scenario:z.string().trim().min(1).max(100).optional()});
+export const importInput=z.object({externalId:z.string().trim().min(3).max(180),name:z.string().trim().min(3).max(140),source:source.optional(),tests:z.array(z.object({externalId:z.string().trim().min(1).max(300),title:z.string().trim().min(3).max(180),suite:z.string().trim().min(1).max(80),expectedStatus:z.enum(['passed','failed','skipped']).default('passed'),attempts:z.array(attempt).min(1).max(21)})).min(1).max(500)});
 export async function importRun(store:Store,projectId:string,raw:unknown){
  const input=importInput.parse(raw),hash=createHash('sha256').update(JSON.stringify(input)).digest('hex');
  if(new Set(input.tests.map(t=>t.externalId)).size!==input.tests.length)throw new DomainError(400,'Duplicate external test identifiers.');
@@ -28,6 +29,7 @@ export async function importRun(store:Store,projectId:string,raw:unknown){
   }
   await store.completeRun(projectId,run.id);
   await store.exec('INSERT INTO imports VALUES(?,?,?,?,?)',projectId,input.externalId,hash,run.id,new Date().toISOString());
+  if(input.source)await store.exec('INSERT INTO import_sources VALUES(?,?)',run.id,JSON.stringify(input.source));
   await store.event(projectId,'automation.imported',`${input.name} · ${input.tests.length} tests`);
   return {run:await store.run(projectId,run.id),replayed:false};
  });

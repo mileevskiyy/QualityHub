@@ -34,7 +34,9 @@ export default class QualityHubReporter implements Reporter {
   await this.attachmentWork;
   const externalId=process.env.QUALITYHUB_RUN_ID;
   if(!externalId)throw new Error('QUALITYHUB_RUN_ID is required. Use a stable unique ID for this CI execution.');
-  const report={externalId,name:process.env.QUALITYHUB_RUN_NAME||'Playwright regression',tests:[...this.tests.values()]};
+  const repository=process.env.QUALITYHUB_REPOSITORY||process.env.GITHUB_REPOSITORY,commit=process.env.QUALITYHUB_COMMIT||process.env.GITHUB_SHA;
+  const source=repository&&commit?{repository,commit,...(process.env.QUALITYHUB_BUILD_URL?{buildUrl:process.env.QUALITYHUB_BUILD_URL}:{}),...(process.env.QUALITYHUB_DIRTY?{dirty:process.env.QUALITYHUB_DIRTY==='true'}:{}),...(process.env.QUALITYHUB_SCENARIO?{scenario:process.env.QUALITYHUB_SCENARIO}:{})}:undefined;
+  const report={externalId,...(source?{source}:{}),name:process.env.QUALITYHUB_RUN_NAME||'Playwright regression',tests:[...this.tests.values()]};
   const path=process.env.QUALITYHUB_REPORT_PATH||'test-results/qualityhub-report.json';await mkdir(dirname(path),{recursive:true});await writeFile(path,JSON.stringify({...report,attachments:this.attachments},null,2));
   if(this.attachmentError)throw new Error('Could not collect all attachments; the partial report is saved locally.',{cause:this.attachmentError});
   const url=process.env.QUALITYHUB_URL,project=process.env.QUALITYHUB_PROJECT_ID,token=process.env.QUALITYHUB_TOKEN;

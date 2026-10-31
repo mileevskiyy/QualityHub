@@ -13,7 +13,7 @@ test('Playwright reporter saves evidence, uploads retries and replays without du
  const store=new Store(),p=await store.createProject('Reporter integration',''),auth=new Auth(store),token=await auth.token(p.id,'Reporter test');
  const server=createApp(store).listen(0,'127.0.0.1');await once(server,'listening');
  const dir=await mkdtemp(join(tmpdir(),'qualityhub-reporter-'));
- const config={QUALITYHUB_URL:`http://127.0.0.1:${(server.address() as any).port}`,QUALITYHUB_PROJECT_ID:p.id,QUALITYHUB_TOKEN:token.token,QUALITYHUB_RUN_ID:'reporter-test-run-1',QUALITYHUB_REPORT_PATH:join(dir,'report.json')};
+ const config={QUALITYHUB_URL:`http://127.0.0.1:${(server.address() as any).port}`,QUALITYHUB_PROJECT_ID:p.id,QUALITYHUB_TOKEN:token.token,QUALITYHUB_REPOSITORY:'mileevskiyy/OrderFlow',QUALITYHUB_COMMIT:'a'.repeat(40),QUALITYHUB_SCENARIO:'integration-test',QUALITYHUB_RUN_ID:'reporter-test-run-1',QUALITYHUB_REPORT_PATH:join(dir,'report.json')};
  const previous={...process.env};Object.assign(process.env,config);
  try{
   const logPath=join(dir,'browser-console.log');await writeFile(logPath,'Expected dashboard');
@@ -22,7 +22,7 @@ test('Playwright reporter saves evidence, uploads retries and replays without du
   reporter.onTestEnd(testcase,{retry:0,status:'failed',duration:50,errors:[{message:'Expected dashboard'}],attachments:[{name:'console.log',contentType:'text/plain',path:logPath},{name:'trace',contentType:'application/zip',body:Buffer.from('UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==','base64')}]} as any);
   reporter.onTestEnd(testcase,{retry:1,status:'passed',duration:20,errors:[]} as any);
   await reporter.onEnd({status:'passed'} as any);await reporter.onEnd({status:'passed'} as any);
-  const report=JSON.parse(await readFile(config.QUALITYHUB_REPORT_PATH,'utf8'));assert.equal(report.tests[0].attempts.length,2);assert.equal(report.attachments.length,2);
+  const report=JSON.parse(await readFile(config.QUALITYHUB_REPORT_PATH,'utf8'));assert.equal(report.source.commit,'a'.repeat(40));assert.equal((await store.run(p.id,(await store.runs(p.id))[0].id)).automation.source.repository,'mileevskiyy/OrderFlow');assert.equal(report.tests[0].attempts.length,2);assert.equal(report.attachments.length,2);
   const result=(await store.run(p.id,(await store.runs(p.id))[0].id)).results[0];
   const evidence=await listAttachments(store,p.id,result.id);assert.equal(evidence.length,2);assert.ok(evidence.every(a=>a.retry===0));
   const stored=await readAttachment(store,p.id,evidence.find(a=>a.kind==='log')!.id);assert.equal(Buffer.from(stored.content_base64,'base64').toString(),'Expected dashboard');

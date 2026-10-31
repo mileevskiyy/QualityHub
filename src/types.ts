@@ -5,7 +5,7 @@ export interface User {id:string;name:string;email:string;csrf:string}
 export interface CaseData { title: string; suite: string; priority: Priority; preconditions: string; steps: string[]; expected: string }
 export interface TestCase extends CaseData { id: string; version: number; project_id: string }
 export interface Result { id: string; case_id: string; case_version: number; snapshot: CaseData; status: Status; note: string; revision: number; defect_id: string|null }
-export interface Run { id: string; name: string; status: 'active'|'completed'; created_at: string; total: number; passed: number; failed: number; blocked: number; untested: number; results?: Result[] }
+export interface Run { id: string; name: string; status: 'active'|'completed'; created_at: string; total: number; passed: number; failed: number; blocked: number; untested: number; results?: Result[]; automation?:{externalId:string;source:{repository:string;commit:string;buildUrl?:string;dirty?:boolean;scenario?:string}|null}|null }
 export interface Defect { result_id: string; id: string; title: string; description: string; severity: Priority; status: 'open'|'in_progress'|'resolved'; run_id: string; case_version: number; created_at: string }
 export interface Event { id: string; action: string; detail: string; created_at: string }
 

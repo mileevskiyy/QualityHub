@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS api_tokens(id TEXT PRIMARY KEY,project_id TEXT NOT NU
 CREATE TABLE IF NOT EXISTS imports(project_id TEXT NOT NULL REFERENCES projects(id),external_id TEXT NOT NULL,payload_hash TEXT NOT NULL,run_id TEXT NOT NULL REFERENCES runs(id),created_at TEXT NOT NULL,PRIMARY KEY(project_id,external_id));
 CREATE TABLE IF NOT EXISTS external_cases(project_id TEXT NOT NULL REFERENCES projects(id),external_id TEXT NOT NULL,case_id TEXT NOT NULL REFERENCES cases(id),PRIMARY KEY(project_id,external_id));
 CREATE TABLE IF NOT EXISTS automation_attempts(id TEXT PRIMARY KEY,result_id TEXT NOT NULL REFERENCES results(id),retry INTEGER NOT NULL,status TEXT NOT NULL,duration_ms INTEGER NOT NULL,error TEXT NOT NULL,UNIQUE(result_id,retry));
+CREATE TABLE IF NOT EXISTS import_sources(run_id TEXT PRIMARY KEY REFERENCES runs(id),payload TEXT NOT NULL);
 CREATE INDEX IF NOT EXISTS sessions_expiry ON sessions(expires_at);
 `;
 

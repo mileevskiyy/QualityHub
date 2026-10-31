@@ -1,5 +1,14 @@
 # Verification record
 
+## OrderFlow integration and source context — 31 October 2026
+
+- `npm test`: **37 passed, 1 skipped** locally; source metadata persistence/replay/invalid-URL/legacy behavior covered on SQLite and PGlite.
+- Build passed; authenticated browser workflow **1 passed**; demo browser suite **4 passed**, including repository/commit/CI links and an explicit unsigned-source notice.
+- The reporter HTTP integration now verifies delivered repository/commit context.
+- A separate real OrderFlow integration exercise created an injected HTTP 503 baseline and normal recovery, imported both completed runs with seven actual evidence files, downloaded and hash-checked all files, replayed delivery without duplicates, linked a defect and observed one fixed test. The injected outage is an experiment, not a production event.
+- Source metadata is supplied, not attested. Local runs with uncommitted changes are marked dirty. PostgreSQL wire checks are executed in CI.
+
+
 ## Execution evidence upgrade — 31 October 2026
 
 Application commit `3b5d2ab`: GitHub Actions passed, including PostgreSQL wire-driver evidence checks (36 server tests, no skips). Render public deployment `dep-dbitm23bc2fs73cr8mag` reached `live`. All three public browser scenarios passed against `https://qualityhub-public-demo.onrender.com/`, including screenshot preview, exact log download and real trace upload.
