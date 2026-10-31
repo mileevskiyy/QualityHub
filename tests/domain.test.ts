@@ -115,7 +115,10 @@ for (const database of [':memory:', 'pglite:']) {
             assert.equal((await store.projects()).length, 1);
             const p = (await store.projects())[0];
             assert.equal((await store.cases(p.id)).length, 8);
-            const r = (await store.runs(p.id))[0];
+            const seededRuns = await store.runs(p.id);
+            assert.equal(seededRuns.length, 3);
+            assert.equal(seededRuns.filter(r=>r.status==='completed').length, 2);
+            const r = seededRuns.find(r=>r.name==='Storefront · smoke check')!;
             assert.equal(r.total, 8);
             assert.equal(r.passed, 4);
             assert.equal(r.failed, 1);

@@ -67,6 +67,10 @@ export function createApp(store: Store, options:{demoUserId?:string}={}) {
     app.post('/api/projects/:p/cases/:c/archive', async (req, res) => { const b = z.object({ version: z.number().int().positive() }).parse(req.body); res.json((await store.archiveCase(req.params.p, req.params.c, b.version))); });
     app.get('/api/projects/:p/runs', async (req, res) => res.json((await store.runs(req.params.p))));
     app.post('/api/projects/:p/runs', async (req, res) => { const b = z.object({ name: text(3, 140), caseIds: z.array(z.string().uuid()).min(1).max(500) }).parse(req.body); res.status(201).json((await store.createRun(req.params.p, b.name, b.caseIds))); });
+    app.get('/api/projects/:p/runs/compare', async (req, res) => {
+        const q = z.object({ baseline: z.string().uuid(), candidate: z.string().uuid() }).parse(req.query);
+        res.json(await store.compareRuns(req.params.p, q.baseline, q.candidate));
+    });
     app.get('/api/projects/:p/runs/:r', async (req, res) => res.json((await store.run(req.params.p, req.params.r))));
     app.get('/api/projects/:p/runs/:r/attempts',async(req,res)=>{await store.run(req.params.p,req.params.r);res.json(await store.all('SELECT automation_attempts.* FROM automation_attempts JOIN results ON automation_attempts.result_id=results.id WHERE results.run_id=? ORDER BY results.position,automation_attempts.retry',req.params.r));});
     app.patch('/api/projects/:p/runs/:r/results/:id', async (req, res) => { const b = z.object({ status: z.enum(['untested', 'passed', 'failed', 'blocked', 'skipped']), note: text(0, 8000), revision: z.number().int().positive() }).parse(req.body); res.json((await store.setResult(req.params.p, req.params.r, req.params.id, b.status, b.note, b.revision))); });

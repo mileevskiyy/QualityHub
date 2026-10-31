@@ -19,7 +19,12 @@ test('PostgreSQL wire driver, migrations, transactions and report replay',{skip:
   const payload={externalId:'postgres-ci-1',name:'Postgres reporter run',tests:[{externalId:'login',title:'Customer can sign in',suite:'chromium',attempts:[{retry:0,status:'passed',durationMs:10}]}]};
   assert.equal((await importRun(store,p.id,payload)).replayed,false);
   assert.equal((await importRun(store,p.id,payload)).replayed,true);
-  assert.equal((await store.runs(p.id))[0].passed,1);
+  const baseline=(await store.runs(p.id))[0];
+  assert.equal(baseline.passed,1);
+  const candidate=await importRun(store,p.id,{...payload,externalId:'postgres-ci-2',tests:[{...payload.tests[0],attempts:[{retry:0,status:'failed',durationMs:25,error:'Regression'}]}]});
+  const comparison=await store.compareRuns(p.id,baseline.id,candidate.run.id);
+  assert.equal(comparison.summary.regression,1);
+  assert.equal(comparison.rows[0].durationDeltaMs,15);
   assert.equal((await auth.projects(user.id)).length,1);
  }finally{await store.close();await pool.query(`DROP SCHEMA ${schema} CASCADE`);await pool.end();}
 });

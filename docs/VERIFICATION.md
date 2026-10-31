@@ -1,5 +1,19 @@
 # Verification record
 
+## Run-comparison upgrade — 31 October 2026
+
+- `npm test`: **29 passed, 1 skipped, 0 failed** locally, including comparison behavior on SQLite and PGlite.
+- `npm run build`: strict TypeScript checking and the production build passed.
+- `npm run test:e2e`: **1 passed** for account/project/case/result/defect creation.
+- `npx playwright test --config playwright.demo.config.ts`: **2 passed**, covering public entry and run comparison/export/direction swapping/mobile layout.
+- Comparison coverage includes all seven categories, changed definitions excluded from regression counts, archived-case evidence, rejected active/self/foreign runs, manual missing durations, final-retry durations and reordered automation reports.
+- HTTP coverage checks malformed query rejection, viewer read access and cross-project denial.
+- The PostgreSQL wire-driver test now includes comparison and duration assertions. It remains skipped locally without `TEST_POSTGRES_URL`; CI runs it against PostgreSQL.
+- Screenshots: `comparison.png` and `comparison-mobile.png`. These show synthetic sample outcomes.
+
+The earlier record below describes the initial release and its checks; it is retained as historical context.
+
+
 Release 0.2, checked on 30 October 2026 with Node.js 24.17.0.
 
 ## Executed automated checks

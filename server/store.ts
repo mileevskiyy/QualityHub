@@ -1,3 +1,4 @@
+import { compareSnapshots } from './comparison.ts';
 import { Database } from './database.ts';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
@@ -119,6 +120,16 @@ export class Store {
             throw new DomainError(404, 'Test run not found');
         return { ...run, results: (await this.all('SELECT results.*,defects.id defect_id FROM results LEFT JOIN defects ON results.id=defects.result_id WHERE run_id=? ORDER BY results.position,results.id', runId)).map(r => ({ ...r, snapshot: JSON.parse(r.snapshot) })) };
     }
+    async compareRuns(projectId: string, baselineId: string, candidateId: string) {
+        if (baselineId === candidateId) throw new DomainError(400, 'Choose two different completed runs.');
+        return this.transaction(async () => {
+            const baseline = await this.run(projectId, baselineId), candidate = await this.run(projectId, candidateId);
+            if (baseline.status !== 'completed' || candidate.status !== 'completed')
+                throw new DomainError(409, 'Complete both runs before comparing their evidence.');
+            const attempts = async (runId: string) => this.all('SELECT automation_attempts.* FROM automation_attempts JOIN results ON automation_attempts.result_id=results.id WHERE results.run_id=?', runId);
+            return compareSnapshots(baseline, candidate, await attempts(baselineId), await attempts(candidateId));
+        });
+    }
     async setResult(projectId: string, runId: string, resultId: string, status: string, note: string, revision: number) {
         return (await this.transaction(async () => {
             const run = (await this.run(projectId, runId));
@@ -195,6 +206,17 @@ export class Store {
         const cases = [];
         for (const input of inputs)
             cases.push(await this.createCase(project.id, input));
+        // Illustrative fixtures, not executions of an external storefront.
+        for (const [offset, name, selection, statuses] of [
+            [2000, 'Sample baseline · comparison', cases.slice(0, 6), ['passed','failed','passed','passed','passed','passed']],
+            [1000, 'Sample candidate · comparison', [cases[0],cases[1],cases[2],cases[3],cases[4],cases[6]], ['failed','passed','blocked','passed','passed','passed']],
+        ] as const) {
+            const sample = await this.createRun(project.id, name, selection.map(c => c.id));
+            for (const [i, result] of sample.results.entries())
+                await this.setResult(project.id, sample.id, result.id, statuses[i], 'Illustrative sample outcome; not an external test execution.', 1);
+            await this.completeRun(project.id, sample.id);
+            await this.exec('UPDATE runs SET created_at=? WHERE id=?', new Date(Date.now()-offset).toISOString(), sample.id);
+        }
         const run = (await this.createRun(project.id, 'Storefront · smoke check', cases.map(c => c.id)));
         for (const [i, r] of run.results.entries()) {
             if (i < 5)

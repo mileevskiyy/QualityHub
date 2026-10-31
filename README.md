@@ -22,6 +22,7 @@ The central design principle is that a test definition can evolve while the evid
 - **Access administration:** invitations, membership changes and removal, with protection against deleting the last project owner.
 - **Automation integration:** a custom Playwright reporter, project-scoped integration tokens, retry history and idempotent report ingestion.
 - **Persistence:** transactional SQLite or PostgreSQL storage, schema migration tracking, foreign keys and uniqueness constraints.
+- **Run comparison:** completed-run diffs by stable test identity, separate definition changes, new failures/fixes, membership changes, final-attempt duration deltas and JSON evidence export.
 - **Visibility:** project activity, execution summaries and JSON export of active test definitions, run snapshots and defects.
 
 ## Technology choices
@@ -102,6 +103,23 @@ The app is exposed only on the local computer at port 3100. PostgreSQL stays on 
 5. Create a defect from a failed or blocked execution. The report is prefilled with the saved steps, expected behavior and actual observation.
 6. Complete the run once all selected cases have an outcome. Retesting is represented by a new run.
 7. Use the library history, originating defect links and project activity to inspect how the evidence was produced.
+
+## Compare releases without confusing changed tests with regressions
+
+Open **Test runs → Compare runs** and choose a baseline and candidate. Only completed runs are eligible; results are read in one transaction and matched by saved case ID, never title or list position. Project read permissions apply to both runs.
+
+- **New failures:** passed → failed, with the same saved definition and version.
+- **Fixed:** failed → passed, with the same saved definition and version.
+- **Definition changed:** a different saved version or definition; outcome changes remain visible but are not counted as product regressions or fixes.
+- **Other status changes:** for example passed → blocked or skipped → passed.
+- **Added / not in candidate:** membership of the selected runs, not proof that a library case was created or deleted.
+- **Unchanged:** the same saved definition and outcome. Observation notes can still differ.
+
+Expand a row to inspect both saved definitions, observations and linked defect IDs in the export. Filters, title/suite search, direction swapping, originating-run navigation and JSON download are available to viewers as well as writers. Duration comparisons use the last recorded automated attempt on each side, including zero-millisecond attempts; manual results have no measured duration. A duration delta alone is not evidence of a performance regression, especially when definitions differ.
+
+Fresh demo installations include two explicitly illustrative completed sample runs alongside the existing active smoke run. Their outcomes are sample data, not measurements from an external storefront. Existing persistent installations are not reseeded.
+
+![Run comparison](docs/comparison.png)
 
 ## Architecture
 

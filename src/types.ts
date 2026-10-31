@@ -8,3 +8,17 @@ export interface Result { id: string; case_id: string; case_version: number; sna
 export interface Run { id: string; name: string; status: 'active'|'completed'; created_at: string; total: number; passed: number; failed: number; blocked: number; untested: number; results?: Result[] }
 export interface Defect { id: string; title: string; description: string; severity: Priority; status: 'open'|'in_progress'|'resolved'; run_id: string; case_version: number; created_at: string }
 export interface Event { id: string; action: string; detail: string; created_at: string }
+
+export type ComparisonCategory = 'regression'|'fixed'|'definition_changed'|'status_changed'|'added'|'omitted'|'unchanged';
+export interface ComparisonRow {
+  caseId:string; title:string; suite:string; category:ComparisonCategory;
+  baseline:Result|null; candidate:Result|null;
+  baselineDurationMs:number|null; candidateDurationMs:number|null; durationDeltaMs:number|null;
+}
+export interface RunComparison {
+  schemaVersion:1;
+  baseline:Pick<Run,'id'|'name'|'status'|'created_at'>;
+  candidate:Pick<Run,'id'|'name'|'status'|'created_at'>;
+  summary:Record<ComparisonCategory,number>;
+  rows:ComparisonRow[];
+}
