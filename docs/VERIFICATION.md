@@ -2,6 +2,8 @@
 
 ## Execution evidence upgrade — 31 October 2026
 
+Application commit `3b5d2ab`: GitHub Actions passed, including PostgreSQL wire-driver evidence checks (36 server tests, no skips). Render public deployment `dep-dbitm23bc2fs73cr8mag` reached `live`. All three public browser scenarios passed against `https://qualityhub-public-demo.onrender.com/`, including screenshot preview, exact log download and real trace upload.
+
 - `npm test`: **35 passed, 1 skipped, 0 failed** locally (SQLite and PGlite). Real PostgreSQL wire coverage is maintained for CI and not claimed as locally executed.
 - `npm run build`: passed.
 - `npm run test:e2e`: **1 passed**, including linked-defect access after the evidence UI was added.
