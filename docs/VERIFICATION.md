@@ -10,6 +10,8 @@
 - HTTP coverage checks malformed query rejection, viewer read access and cross-project denial.
 - The PostgreSQL wire-driver test now includes comparison and duration assertions. It remains skipped locally without `TEST_POSTGRES_URL`; CI runs it against PostgreSQL.
 - Screenshots: `comparison.png` and `comparison-mobile.png`. These show synthetic sample outcomes.
+- GitHub Actions completed successfully for application commit `bec698d`, including the real PostgreSQL wire-driver test (**30 passed, 0 skipped**).
+- Render public-demo deployment `dep-dbis4ivavr4c73bdcddg` reached `live` for that commit. Both public browser scenarios passed against `https://qualityhub-public-demo.onrender.com/` (entry and comparison/export/mobile).
 
 The earlier record below describes the initial release and its checks; it is retained as historical context.
 
