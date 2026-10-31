@@ -3,6 +3,7 @@ import {createHash} from 'node:crypto';
 import {readFile} from 'node:fs/promises';
 test('attach real screenshot, log and browser trace, then download exact evidence',async({page,context},testInfo)=>{
  await page.goto('/');await page.getByRole('button',{name:'Try the demo',exact:true}).click();
+ await expect(page.getByRole('combobox',{name:'Current project'})).toBeVisible();
  const csrf=(await(await page.request.get('/api/auth/me')).json()).csrf;
  const headers={'X-CSRF-Token':csrf};
  const project=await(await page.request.post('/api/projects',{headers,data:{name:`Evidence browser ${Date.now()}`}})).json();

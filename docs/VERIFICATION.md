@@ -2,7 +2,7 @@
 
 ## Execution evidence upgrade — 31 October 2026
 
-- `npm test`: **34 passed, 1 skipped, 0 failed** locally (SQLite and PGlite). Real PostgreSQL wire coverage is maintained for CI and not claimed as locally executed.
+- `npm test`: **35 passed, 1 skipped, 0 failed** locally (SQLite and PGlite). Real PostgreSQL wire coverage is maintained for CI and not claimed as locally executed.
 - `npm run build`: passed.
 - `npm run test:e2e`: **1 passed**, including linked-defect access after the evidence UI was added.
 - Demo browser suite: **3 passed**. The new scenario uploads an actual browser screenshot, UTF-8 log and a real Playwright-generated trace, checks exact downloaded bytes and stored screenshot SHA-256, previews an image, reopens evidence and checks mobile overflow.
@@ -10,6 +10,7 @@
 - Store checks cover result/project isolation, immutable completed outcomes, matching retry requirements, retention expiry/pruning, quota rejection and rollback when the audit write fails, on both database engines.
 - HTTP checks cover viewer download/write denial, cross-project denial, write-token download denial and restrictive download headers.
 - Validation checks cover path-like filenames, malformed base64, unsupported screenshot bytes, invalid ZIP signatures, binary logs and oversize content.
+- Boundary follow-up: the maximum 4 MiB file exposed recursion in the original base64 regular expression. Validation now uses a simple alphabet check and canonical round-trip; the added boundary test accepts the exact-size payload. The browser evidence setup also explicitly waits for authenticated entry before issuing setup requests.
 - Screenshots: `evidence.png`, `evidence-mobile.png`. They use synthetic test data. No archive extraction, antivirus scanning, hosted object storage or performance capacity is claimed.
 
 

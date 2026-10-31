@@ -11,8 +11,9 @@ export const attachmentInput=z.object({
 export const attachmentColumns='id,result_id,filename,kind,mime,byte_size,sha256,retry,created_at,expires_at';
 export function validateAttachment(raw:unknown){
  const value=attachmentInput.parse(raw);
- if(!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value.contentBase64))throw new DomainError(400,'Invalid base64 attachment.');
+ if(value.contentBase64.length%4||/[^A-Za-z0-9+/=]/.test(value.contentBase64))throw new DomainError(400,'Invalid base64 attachment.');
  const bytes=Buffer.from(value.contentBase64,'base64');
+ if(bytes.toString('base64')!==value.contentBase64)throw new DomainError(400,'Invalid base64 attachment.');
  if(!bytes.length||bytes.length>MAX_ATTACHMENT_BYTES)throw new DomainError(413,'Attachments must be nonempty and at most 4 MiB.');
  let mime='application/octet-stream';
  if(value.kind==='screenshot'){

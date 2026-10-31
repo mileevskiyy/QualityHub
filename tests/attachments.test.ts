@@ -40,3 +40,9 @@ test('attachment validation rejects paths, invalid encodings, active image forma
  for(const value of [{...log,filename:'../secret.log'},{...log,contentBase64:'!!!!'},{...log,kind:'screenshot'},{...log,kind:'trace'},{...log,contentBase64:Buffer.from([255]).toString('base64')},{...log,contentBase64:Buffer.from([0]).toString('base64')},{...log,contentBase64:Buffer.alloc(4*1024*1024+1).toString('base64')}])assert.throws(()=>validateAttachment(value));
  const bytes=Buffer.from('UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA==','base64');assert.equal(validateAttachment({...log,kind:'trace',contentBase64:bytes.toString('base64')}).mime,'application/octet-stream');
 });
+
+test('maximum supported file validates without regex recursion or truncated content',()=>{
+ const bytes=Buffer.alloc(4*1024*1024,65);
+ const attachment=validateAttachment({filename:'boundary.log',kind:'log',contentBase64:bytes.toString('base64')});
+ assert.equal(attachment.bytes.length,bytes.length);assert.ok(attachment.bytes.equals(bytes));
+});
