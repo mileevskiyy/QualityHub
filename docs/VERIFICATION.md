@@ -2,6 +2,8 @@
 
 ## OrderFlow integration and source context — 31 October 2026
 
+Application commit `ffa30ef` passed GitHub Actions (38 server tests including PostgreSQL wire coverage). Public deployment `dep-dbitt895efls73dde7a0` reached live; all four public browser scenarios passed. The connected OrderFlow workflow additionally passed [run 41201353589](https://github.com/mileevskiyy/OrderFlow/actions/runs/41201353589) using this pinned target revision.
+
 - `npm test`: **37 passed, 1 skipped** locally; source metadata persistence/replay/invalid-URL/legacy behavior covered on SQLite and PGlite.
 - Build passed; authenticated browser workflow **1 passed**; demo browser suite **4 passed**, including repository/commit/CI links and an explicit unsigned-source notice.
 - The reporter HTTP integration now verifies delivered repository/commit context.
